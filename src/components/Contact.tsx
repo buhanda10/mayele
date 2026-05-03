@@ -7,8 +7,7 @@ import {
   FiMail, 
   FiMapPin, 
   FiClock,
-  FiSend,
-  FiCopy 
+  FiSend
 } from 'react-icons/fi';
 import { useState } from 'react';
 import { theme } from '@/styles/theme';
@@ -174,19 +173,6 @@ const QRWrapper = styled(motion.div)`
   flex-direction: column;
   gap: 0.8rem;
   border: 2px dashed ${theme.colors.primary}30;
-`;
-
-const QRPlaceholder = styled.div`
-  width: 140px;
-  height: 140px;
-  background: ${theme.colors.dark};
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  color: ${theme.colors.gray};
-  text-align: center;
 `;
 
 const QRLabel = styled.p`
