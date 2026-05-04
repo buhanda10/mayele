@@ -5,7 +5,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Mayele Tech — Solutions Digitales Innovantes',
-  description: 'Devenir une référence africaine dans la conception de solutions numériques innovantes.',
+  description: 'Devenir une référence congolaise dans la conception de solutions numériques innovantes.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

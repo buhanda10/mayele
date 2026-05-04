@@ -375,7 +375,7 @@ export default function Contact() {
               <InfoIcon><FiMail /></InfoIcon>
               <InfoContent>
                 <InfoLabel>Email</InfoLabel>
-                <InfoLink href="mailto:Contact@mayele-tech.com">
+                <InfoLink href="mailto:nicaisebuhanda6@gmail.com">
                   Contact@mayele-tech.com
                 </InfoLink>
               </InfoContent>
@@ -394,7 +394,7 @@ export default function Contact() {
               <InfoIcon><FiMapPin /></InfoIcon>
               <InfoContent>
                 <InfoLabel>Site Web</InfoLabel>
-                <InfoLink href="https://www.mayele-tech.com" target="_blank" rel="noopener noreferrer">
+                <InfoLink href="https://mayele-zeta.vercel.app/" target="_blank" rel="noopener noreferrer">
                   www.mayele-tech.com
                 </InfoLink>
               </InfoContent>
@@ -418,7 +418,7 @@ export default function Contact() {
             >
               
                 <QRCodeSVG
-                    value="https://www.mayele-tech.com/"
+                    value="https://mayele-zeta.vercel.app/"
                     size={140}
                     bgColor="#ffffff"
                     fgColor="#0a0a0a"

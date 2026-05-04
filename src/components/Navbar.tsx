@@ -3,9 +3,10 @@
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import { FiFileText } from 'react-icons/fi';  // Icône document
 import { theme } from '@/styles/theme';
 
-// === STYLES ===
+// === STYLES (inchangés sauf ajout du TarifButton) ===
 
 const Nav = styled.nav<{ scrolled: boolean }>`
   position: fixed;
@@ -36,6 +37,46 @@ const Logo = styled(motion.a)`
   z-index: 1001;
 `;
 
+const RightSide = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  z-index: 1001;
+`;
+
+// Bouton Tarifs stylé
+const TarifButton = styled(motion.a)`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.3rem;
+  border-radius: 50px;
+  background: ${theme.colors.gradient};
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(108, 99, 255, 0.3);
+  transition: box-shadow 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 6px 25px rgba(108, 99, 255, 0.5);
+  }
+
+  svg {
+    font-size: 1rem;
+  }
+
+  @media (max-width: 480px) {
+    /* Sur très petit écran, on peut ne garder que l'icône */
+    padding: 0.6rem;
+    span {
+      display: none;
+    }
+  }
+`;
+
 const BurgerButton = styled(motion.button)`
   width: 40px;
   height: 28px;
@@ -43,7 +84,6 @@ const BurgerButton = styled(motion.button)`
   background: none;
   border: none;
   cursor: pointer;
-  z-index: 1001;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -124,37 +164,23 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // Détecter le scroll
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
+    const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Bloquer le scroll quand le menu est ouvert
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
+    document.body.style.overflow = isOpen ? 'hidden' : 'unset';
+    return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen]);
 
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
     setIsOpen(false);
-    
-    // Scroll fluide vers la section
     setTimeout(() => {
       const element = document.querySelector(href);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-      }
+      if (element) element.scrollIntoView({ behavior: 'smooth' });
     }, 300);
   };
 
@@ -172,44 +198,47 @@ export default function Navbar() {
           Mayele Tech
         </Logo>
 
-        {/* Burger */}
-        <BurgerButton
-          onClick={() => setIsOpen(!isOpen)}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-          whileTap={{ scale: 0.9 }}
-          aria-label="Menu"
-        >
-          {/* Barre du haut */}
-          <BurgerLine 
-            top
-            animate={isOpen ? {
-              top: '50%',
-              rotate: -45,
-            } : {
-              top: '25%',
-              rotate: 0,
-            }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-          />
-          
-          {/* Barre du bas */}
-          <BurgerLine 
-            bottom
-            animate={isOpen ? {
-              top: '50%',
-              rotate: 45,
-            } : {
-              top: '75%',
-              rotate: 0,
-            }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-          />
-        </BurgerButton>
+        {/* Bouton Tarifs + Burger */}
+        <RightSide>
+          {/* Bouton Tarifs */}
+          <TarifButton
+            href="/Tarif.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <FiFileText />
+            <span>Tarifs</span>
+          </TarifButton>
+
+          {/* Burger */}
+          <BurgerButton
+            onClick={() => setIsOpen(!isOpen)}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            whileTap={{ scale: 0.9 }}
+            aria-label="Menu"
+          >
+            <BurgerLine 
+              top
+              animate={isOpen ? { top: '50%', rotate: -45 } : { top: '25%', rotate: 0 }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+            />
+            <BurgerLine 
+              bottom
+              animate={isOpen ? { top: '50%', rotate: 45 } : { top: '75%', rotate: 0 }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+            />
+          </BurgerButton>
+        </RightSide>
       </Nav>
 
-      {/* Menu Overlay */}
+      {/* Menu Overlay (inchangé) */}
       <AnimatePresence>
         {isOpen && (
           <MenuOverlay
@@ -223,12 +252,8 @@ export default function Navbar() {
               animate="open"
               exit="closed"
               variants={{
-                open: {
-                  transition: { staggerChildren: 0.08, delayChildren: 0.2 },
-                },
-                closed: {
-                  transition: { staggerChildren: 0.05, staggerDirection: -1 },
-                },
+                open: { transition: { staggerChildren: 0.08, delayChildren: 0.2 } },
+                closed: { transition: { staggerChildren: 0.05, staggerDirection: -1 } },
               }}
             >
               {links.map((link) => (
@@ -237,16 +262,8 @@ export default function Navbar() {
                   href={link.href}
                   onClick={(e) => handleLinkClick(e, link.href)}
                   variants={{
-                    open: {
-                      opacity: 1,
-                      y: 0,
-                      transition: { duration: 0.4, ease: 'easeOut' },
-                    },
-                    closed: {
-                      opacity: 0,
-                      y: 40,
-                      transition: { duration: 0.3, ease: 'easeIn' },
-                    },
+                    open: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+                    closed: { opacity: 0, y: 40, transition: { duration: 0.3 } },
                   }}
                 >
                   <MenuNumber>{link.number}.</MenuNumber>
