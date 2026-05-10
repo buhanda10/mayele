@@ -7,11 +7,12 @@ import {
   FiMail, 
   FiMapPin, 
   FiClock,
-  FiSend
+  FiSend,
+  FiCheckCircle,
+  FiAlertCircle 
 } from 'react-icons/fi';
-import { useState } from 'react';
+import { useState, FormEvent } from 'react';
 import { theme } from '@/styles/theme';
-import { QRCodeSVG } from 'qrcode.react';
 
 // === STYLES ===
 
@@ -94,8 +95,6 @@ const Grid = styled.div`
   }
 `;
 
-// === COLONNE INFOS ===
-
 const InfoColumn = styled(motion.div)`
   display: flex;
   flex-direction: column;
@@ -160,8 +159,6 @@ const InfoLink = styled.a`
   }
 `;
 
-// === QR CODE ===
-
 const QRWrapper = styled(motion.div)`
   margin-top: 1rem;
   padding: 1.5rem;
@@ -175,14 +172,25 @@ const QRWrapper = styled(motion.div)`
   border: 2px dashed ${theme.colors.primary}30;
 `;
 
+const QRPlaceholder = styled.div`
+  width: 140px;
+  height: 140px;
+  background: ${theme.colors.dark};
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: ${theme.colors.gray};
+  text-align: center;
+`;
+
 const QRLabel = styled.p`
   font-size: 0.8rem;
   color: ${theme.colors.dark};
   font-weight: 600;
   text-align: center;
 `;
-
-// === COLONNE FORMULAIRE ===
 
 const FormColumn = styled(motion.div)`
   background: ${theme.colors.cardBg};
@@ -262,47 +270,112 @@ const Textarea = styled.textarea`
   }
 `;
 
-const SubmitButton = styled(motion.button)`
+const SubmitButton = styled(motion.button)<{ disabled: boolean }>`
   width: 100%;
   padding: 1rem;
-  background: ${theme.colors.gradient};
+  background: ${props => props.disabled ? 'gray' : theme.colors.gradient};
   color: white;
   border: none;
   border-radius: 12px;
   font-size: 1rem;
   font-weight: 600;
-  cursor: pointer;
+  cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
   font-family: ${theme.fonts.body};
-  box-shadow: 0 10px 30px rgba(108, 99, 255, 0.25);
-  transition: box-shadow 0.3s ease;
-
-  &:hover {
-    box-shadow: 0 15px 40px rgba(108, 99, 255, 0.4);
-  }
+  box-shadow: ${props => props.disabled ? 'none' : '0 10px 30px rgba(108, 99, 255, 0.25)'};
+  opacity: ${props => props.disabled ? 0.6 : 1};
 `;
 
-const CopyMessage = styled(motion.span)`
-  font-size: 0.75rem;
-  color: ${theme.colors.secondary};
-  margin-left: 0.5rem;
+const FeedbackMessage = styled(motion.div)<{ type: 'success' | 'error' }>`
+  margin-top: 1.2rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background: ${props => props.type === 'success' ? 'rgba(0, 212, 170, 0.1)' : 'rgba(255, 107, 107, 0.1)'};
+  border: 1px solid ${props => props.type === 'success' ? 'rgba(0, 212, 170, 0.3)' : 'rgba(255, 107, 107, 0.3)'};
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  color: ${props => props.type === 'success' ? theme.colors.secondary : theme.colors.accent};
+
+  svg {
+    font-size: 1.2rem;
+  }
 `;
 
 // === COMPOSANT ===
 
 export default function Contact() {
-  const [copied, setCopied] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    message: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [feedback, setFeedback] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
 
-  const handleCopy = async (text: string, label: string) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setFeedback(null);
+
+    // Validation basique
+    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
+      setFeedback({
+        type: 'error',
+        message: 'Veuillez remplir tous les champs obligatoires (nom, email, message).'
+      });
+      return;
+    }
+
+    // Vérifier format email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setFeedback({
+        type: 'error',
+        message: 'Veuillez entrer une adresse email valide.'
+      });
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      await navigator.clipboard.writeText(text);
-      setCopied(label);
-      setTimeout(() => setCopied(null), 2000);
-    } catch {
-      // Fallback si clipboard non supporté
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Erreur lors de l\'envoi');
+      }
+
+      // Succès
+      setFeedback({
+        type: 'success',
+        message: '✅ Message envoyé avec succès ! Nous vous répondrons dans les 24 heures.'
+      });
+      setFormData({ name: '', email: '', phone: '', message: '' });
+    } catch (error: any) {
+      setFeedback({
+        type: 'error',
+        message: error.message || 'Une erreur est survenue. Veuillez réessayer.'
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -311,7 +384,6 @@ export default function Contact() {
       <GlowBg />
 
       <Container>
-        {/* Header */}
         <Header>
           <Badge
             initial={{ opacity: 0, y: 20 }}
@@ -340,38 +412,21 @@ export default function Contact() {
         </Header>
 
         <Grid>
-          {/* Colonne infos */}
           <InfoColumn
             initial={{ opacity: 0, x: -40 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
-            {/* Téléphone */}
-            <InfoCard
-              whileHover={{ x: 5 }}
-              onClick={() => handleCopy('+243858814961', 'tel')}
-            >
+            <InfoCard whileHover={{ x: 5 }}>
               <InfoIcon><FiPhone /></InfoIcon>
               <InfoContent>
                 <InfoLabel>Téléphone</InfoLabel>
                 <InfoValue>+243 858 814 961</InfoValue>
               </InfoContent>
-              {copied === 'tel' && (
-                <CopyMessage
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                >
-                  Copié !
-                </CopyMessage>
-              )}
             </InfoCard>
 
-            {/* Email */}
-            <InfoCard
-              whileHover={{ x: 5 }}
-              onClick={() => handleCopy('Contact@mayele-tech.com', 'email')}
-            >
+            <InfoCard whileHover={{ x: 5 }}>
               <InfoIcon><FiMail /></InfoIcon>
               <InfoContent>
                 <InfoLabel>Email</InfoLabel>
@@ -379,17 +434,8 @@ export default function Contact() {
                   Contact@mayele-tech.com
                 </InfoLink>
               </InfoContent>
-              {copied === 'email' && (
-                <CopyMessage
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                >
-                  Copié !
-                </CopyMessage>
-              )}
             </InfoCard>
 
-            {/* Site web */}
             <InfoCard whileHover={{ x: 5 }}>
               <InfoIcon><FiMapPin /></InfoIcon>
               <InfoContent>
@@ -400,7 +446,6 @@ export default function Contact() {
               </InfoContent>
             </InfoCard>
 
-            {/* Disponibilité */}
             <InfoCard whileHover={{ x: 5 }}>
               <InfoIcon><FiClock /></InfoIcon>
               <InfoContent>
@@ -409,28 +454,17 @@ export default function Contact() {
               </InfoContent>
             </InfoCard>
 
-            {/* QR Code */}
             <QRWrapper
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.8 }}
             >
-              
-                <QRCodeSVG
-                    value="https://mayele-zeta.vercel.app/"
-                    size={140}
-                    bgColor="#ffffff"
-                    fgColor="#0a0a0a"
-                    level="M"
-                />
-                <QRLabel>
-                    Scannez pour nous contacter rapidement 📱
-                </QRLabel>
-                </QRWrapper>
+              <QRPlaceholder>QR Code ici</QRPlaceholder>
+              <QRLabel>Scannez pour nous contacter rapidement 📱</QRLabel>
+            </QRWrapper>
           </InfoColumn>
 
-          {/* Colonne formulaire */}
           <FormColumn
             initial={{ opacity: 0, x: 40 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -442,35 +476,84 @@ export default function Contact() {
               Nous vous répondrons dans les 24 heures.
             </FormSubtitle>
 
-            <form onSubmit={(e) => e.preventDefault()}>
+            <form onSubmit={handleSubmit}>
               <FormGroup>
-                <Label>Nom complet</Label>
-                <Input type="text" placeholder="Votre nom" />
+                <Label htmlFor="name">Nom complet *</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  name="name"
+                  placeholder="Votre nom"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                />
               </FormGroup>
 
               <FormGroup>
-                <Label>Email</Label>
-                <Input type="email" placeholder="votre@email.com" />
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  name="email"
+                  placeholder="votre@email.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                />
               </FormGroup>
 
               <FormGroup>
-                <Label>Téléphone</Label>
-                <Input type="tel" placeholder="+243 ..." />
+                <Label htmlFor="phone">Téléphone</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  name="phone"
+                  placeholder="+243 ..."
+                  value={formData.phone}
+                  onChange={handleChange}
+                />
               </FormGroup>
 
               <FormGroup>
-                <Label>Message</Label>
-                <Textarea placeholder="Décrivez votre projet..." />
+                <Label htmlFor="message">Message *</Label>
+                <Textarea
+                  id="message"
+                  name="message"
+                  placeholder="Décrivez votre projet..."
+                  value={formData.message}
+                  onChange={handleChange}
+                  required
+                />
               </FormGroup>
 
               <SubmitButton
                 type="submit"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                disabled={loading}
+                whileHover={loading ? {} : { scale: 1.02 }}
+                whileTap={loading ? {} : { scale: 0.98 }}
               >
-                <FiSend />
-                Envoyer le message
+                {loading ? (
+                  <>⏳ Envoi en cours...</>
+                ) : (
+                  <>
+                    <FiSend />
+                    Envoyer le message
+                  </>
+                )}
               </SubmitButton>
+
+              {/* Feedback */}
+              {feedback && (
+                <FeedbackMessage
+                  type={feedback.type}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  {feedback.type === 'success' ? <FiCheckCircle /> : <FiAlertCircle />}
+                  {feedback.message}
+                </FeedbackMessage>
+              )}
             </form>
           </FormColumn>
         </Grid>
